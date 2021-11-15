@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import s from './ContactForm.module.css';
 
-function ContactForm({ addContact }) {
+import s from './ContactForm.module.css';
+import { addContact } from '../../redux/phonebook/phonebook-actions';
+
+function ContactForm({ contactsToContactForm, onSubmit }) {
   const [name,setName] = useState('');
   const [number,setNumber] = useState('');
 
@@ -20,7 +23,13 @@ function ContactForm({ addContact }) {
 
   const handleSubmit = e => {
     e.preventDefault();
-    addContact({ name, number });
+    // Проверка на повторный ввод существующего контакта
+    const normalizedName = name.toLowerCase();
+    contactsToContactForm.some(contact => contact.name.toLowerCase() === normalizedName)
+      ?
+        alert(`${name} is already in contacts.`)
+      : 
+        onSubmit({ name, number });
     reset();
   };
 
@@ -68,14 +77,23 @@ function ContactForm({ addContact }) {
   );
 };
 
-export default ContactForm;
+const mapStateToProps = state => {
+  return {
+    contactsToContactForm: state.contacts.items,
+  };
+};
+
+// const mapDispatchToProps = { addContact };
+const mapDispatchToProps = dispatch => {
+  return {
+    onSubmit: ({ name, number }) => dispatch(addContact({ name, number })),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(ContactForm);
 
 ContactForm.propTypes = {
-  addContact: PropTypes.func.isRequired,
-}
-// Проблема обновления состояния - всегда должно быть новое после рендера,  
-// а не мутировать по ссылке старое.
-// Проверка на имутабеольность (равны ли эти значения между рендерами) ->
-// componentDidUpdate(prevProps, prevState) {
-//   console.log(prevState.name === this.state.name);
-// }
+  contactsToContactForm: PropTypes.arrayOf(
+    PropTypes.shape()).isRequired,
+  onSubmit: PropTypes.func.isRequired,
+};

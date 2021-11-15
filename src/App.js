@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useEffect } from 'react';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
 
 import './App.css';
 import Container from './components/Container';
@@ -8,70 +9,36 @@ import ContactForm from './components/ContactForm';
 import Filter from './components/Filter';
 import ContactList from './components/ContactList';
 
-function App() {
-  // ленивая инициализация состояния = lazy state initialization
-  const [contacts, setContacts] = useState(() => {
-    return JSON.parse(window.localStorage.getItem('contacts')) ?? [];
-  });
-  const [filter, setFilter] = useState('');
-
+function App({ contactsToApp }) {
   useEffect(() => {
-    window.localStorage.setItem('contacts', JSON.stringify(contacts));
-  }, [contacts]);
-
-  //===== Добавление нового контакта =====
-  const addContact = ({ name, number }) => {
-    const contact = {
-      id: uuidv4(),
-      name,
-      number,
-    };
-    // Проверка на повторный ввод существующего контакта
-    const normalizedName = name.toLowerCase();
-    contacts.some(contact => contact.name.toLowerCase() === normalizedName)
-      ?
-        alert(`${name} is already in contacts.`)
-      : 
-        setContacts(prevState => [contact, ...prevState]);
-  }
-
-  //===== Удаление контакта =====
-  const deleteContact = id => {
-    setContacts(prevState => prevState.filter(contact => contact.id !== id));
-  };
-  // ===== Запись значения Фильтра из инпута =====
-  const handleFilter = e => {
-    setFilter(e.currentTarget.value);
-  };
-  // ===== Фильтр =====
-  const showFilteredContacts = () => {
-    const normalizedFilter = filter.trim().toLowerCase();
-
-    return (contacts.filter(contact =>
-      contact.name.toLowerCase().includes(normalizedFilter) ||
-      contact.number.includes(filter.trim())
-    ));
-  };
+    window.localStorage.setItem('contacts', JSON.stringify(contactsToApp));
+  }, [contactsToApp]);
 
   return (
     <Container>
       <Section>
         <h1>Phonebook</h1>
-        <ContactForm
-          addContact={addContact} />
+        <ContactForm />
       </Section>
       
       <Section>
         <h2>Contacts</h2>
-        <Filter
-          filterValue={filter}
-          handleFilter={handleFilter} />
-        <ContactList
-          filteredContacts={showFilteredContacts()}
-          deleteContact={deleteContact} />
+        <Filter />
+        <ContactList />
       </Section>
     </Container>
   );
 };
 
-export default App;
+const mapStateToProps = state => {
+  return {
+    contactsToApp: state.contacts.items,
+  };
+};
+
+export default connect(mapStateToProps)(App);
+
+App.propTypes = {
+  contactsToApp: PropTypes.arrayOf(
+    PropTypes.shape()).isRequired,
+};
